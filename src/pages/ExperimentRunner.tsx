@@ -1,5 +1,5 @@
 import { useReducer, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import FeedPage from './FeedPage';
 import WatchPage from './WatchPage';
 import { CONDITIONS, isValidCondition } from '../utils/conditions';
@@ -98,6 +98,7 @@ export default function ExperimentRunner() {
   const conditionId: ConditionId = isValidCondition(rawId ?? '') ? (rawId as ConditionId) : 'control';
   const cfg = CONDITIONS[conditionId];
 
+  const navigate = useNavigate();
   const { setIsWatching } = useViewContext();
 
   const [state, dispatch] = useReducer(
@@ -105,6 +106,16 @@ export default function ExperimentRunner() {
     undefined,
     buildInitialState,
   );
+
+  // URL을 현재 상태에 맞게 동기화
+  const targetUrl =
+    state.type === 'feed'
+      ? `/${conditionId}`
+      : `/${conditionId}/watch?v=${cfg.videoCount === 2 && !state.isVideo1 ? 2 : 1}`;
+
+  useEffect(() => {
+    navigate(targetUrl, { replace: true });
+  }, [targetUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setIsWatching(state.type === 'watch');

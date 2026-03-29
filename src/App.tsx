@@ -20,8 +20,8 @@ function AppInner() {
         }`}
       >
         <Routes>
-          <Route path="/run/:conditionId" element={<ExperimentRunner />} />
-          <Route path="*" element={<Navigate to="/run/control" replace />} />
+          <Route path="/:conditionId/*" element={<ExperimentRunner />} />
+          <Route path="*" element={<Navigate to="/control" replace />} />
         </Routes>
       </main>
     </div>
