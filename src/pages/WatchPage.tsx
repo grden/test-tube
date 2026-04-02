@@ -9,6 +9,7 @@ interface WatchPageProps {
   videoUrl: string;
   speed: number;
   showSavedTime: boolean;
+  savedTimeCap?: number;
   adType?: AdType;
   conditionId?: ConditionId;
   title?: string;
@@ -26,6 +27,7 @@ export default function WatchPage({
   videoUrl,
   speed,
   showSavedTime,
+  savedTimeCap = 15,
   adType,
   conditionId,
   title,
@@ -76,7 +78,7 @@ export default function WatchPage({
 
             {/* 아낀 시간 배지 */}
             {showSavedTime && !adShowing && duration > 0 && (
-              <SavedTimeBadge playedSeconds={playedSeconds} duration={duration} />
+              <SavedTimeBadge playedSeconds={playedSeconds} duration={duration} maxSeconds={savedTimeCap} />
             )}
           </div>
         </div>

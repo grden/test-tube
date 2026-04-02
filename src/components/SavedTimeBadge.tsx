@@ -1,13 +1,14 @@
 interface SavedTimeBadgeProps {
   playedSeconds: number;
   duration: number;
+  maxSeconds?: number;
 }
 
-export default function SavedTimeBadge({ playedSeconds, duration }: SavedTimeBadgeProps) {
+export default function SavedTimeBadge({ playedSeconds, duration, maxSeconds = 15 }: SavedTimeBadgeProps) {
   if (duration <= 0) return null;
 
   const interval = duration / 15;
-  const displayedSavedTime = Math.min(15, Math.round(playedSeconds / interval));
+  const displayedSavedTime = Math.min(maxSeconds, Math.round(playedSeconds / interval));
 
   return (
     <div className="yt-saved-time-badge">

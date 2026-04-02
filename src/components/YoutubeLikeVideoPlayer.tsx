@@ -50,36 +50,11 @@ export default function YoutubeLikeVideoPlayer({
   const [bufferedEnd, setBufferedEnd] = useState(0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
-  const [seeking, setSeeking] = useState(false);
   const [hoveringUi, setHoveringUi] = useState(false);
   const [progressHover, setProgressHover] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const showControls = !playing || paused || hoveringUi || seeking || progressHover;
-
-  const seekFromClientX = useCallback(
-    (clientX: number) => {
-      const track = progressTrackRef.current;
-      const v = videoRef.current;
-      if (!track || !v || !Number.isFinite(duration) || duration <= 0) return;
-      const rect = track.getBoundingClientRect();
-      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-      v.currentTime = ratio * duration;
-    },
-    [duration],
-  );
-
-  useEffect(() => {
-    if (!seeking) return;
-    const onMove = (e: MouseEvent) => seekFromClientX(e.clientX);
-    const onUp = () => setSeeking(false);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, [seeking, seekFromClientX]);
+  const showControls = !playing || paused || hoveringUi || progressHover;
 
   useEffect(() => {
     const v = videoRef.current;
@@ -108,7 +83,7 @@ export default function YoutubeLikeVideoPlayer({
 
   useEffect(() => {
     if (!playing) return;
-    if (paused || hoveringUi || seeking) {
+    if (paused || hoveringUi) {
       if (hideControlsTimerRef.current) {
         clearTimeout(hideControlsTimerRef.current);
         hideControlsTimerRef.current = null;
@@ -119,7 +94,7 @@ export default function YoutubeLikeVideoPlayer({
     return () => {
       if (hideControlsTimerRef.current) clearTimeout(hideControlsTimerRef.current);
     };
-  }, [playing, paused, hoveringUi, seeking]);
+  }, [playing, paused, hoveringUi]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -188,7 +163,7 @@ export default function YoutubeLikeVideoPlayer({
         setHoveringUi(true);
       }}
       onMouseLeave={() => {
-        if (!seeking) setHoveringUi(false);
+        setHoveringUi(false);
       }}
       onKeyDown={onKeyDown}
       tabIndex={0}
@@ -232,12 +207,7 @@ export default function YoutubeLikeVideoPlayer({
       >
         <div
           ref={progressTrackRef}
-          className={`yt-native-progress-wrap ${progressHover || seeking ? 'yt-native-progress-wrap--hover' : ''}`}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setSeeking(true);
-            seekFromClientX(e.clientX);
-          }}
+          className={`yt-native-progress-wrap ${progressHover ? 'yt-native-progress-wrap--hover' : ''}`}
           onMouseEnter={() => setProgressHover(true)}
           onMouseLeave={() => setProgressHover(false)}
         >

@@ -4,7 +4,7 @@ import FeedPage from './FeedPage';
 import WatchPage from './WatchPage';
 import { CONDITIONS, isValidCondition } from '../utils/conditions';
 import { useViewContext } from '../contexts/ViewContext';
-import { VIDEO_SUBWAY, VIDEO_GAS, VIDEO_0349 } from '../data/videos';
+import { VIDEO_SUBWAY, VIDEO_GAS, VIDEO_0349, VIDEO_MONK, VIDEO_DRAMA, VIDEO_MARBLE } from '../data/videos';
 import type { ConditionId, AdType, ExperimentPhase } from '../types';
 
 // --------------- State Machine ---------------
@@ -30,40 +30,46 @@ function reducer(state: State, action: Action, conditionId: ConditionId): State 
       if (state.type !== 'feed') return state;
 
       if (cfg.videoCount === 2) {
-        // B1/B2: gas 먼저 1.05x 배속, 사이드바에서 0349로 이동
+        // B1: gas, B2: monk — 첫 번째 영상 1.05x 배속
+        const video1 = conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS;
         return {
           type: 'watch',
-          videoUrl: VIDEO_GAS.url,
+          videoUrl: video1.url,
           showAd: false,
           adType: null,
-          speed: cfg.video1Speed,
-          showSavedTime: cfg.video1ShowSavedTime,
+          speed: cfg.video1Speed ?? 1.05,
+          showSavedTime: cfg.video1ShowSavedTime ?? false,
+          savedTimeCap: cfg.mainSavedTimeCap,
           isVideo1: true,
         };
       } else {
-        // Control / A1 / A2: subway 영상, 광고 후 재생
+        // Control/A1: subway, A2: drama — 광고 후 재생
+        const mainVideo = conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY;
         return {
           type: 'watch',
-          videoUrl: VIDEO_SUBWAY.url,
+          videoUrl: mainVideo.url,
           showAd: true,
           adType: cfg.adType,
           speed: cfg.mainSpeed,
           showSavedTime: cfg.mainShowSavedTime,
+          savedTimeCap: cfg.mainSavedTimeCap,
           isVideo1: false,
         };
       }
     }
 
     case 'CLICK_VIDEO2': {
-      // B1/B2: 사이드바의 0349 클릭 → 광고 후 재생
+      // B1: 0349, B2: marble — 광고 후 재생
       if (cfg.videoCount !== 2) return state;
+      const video2 = conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349;
       return {
         type: 'watch',
-        videoUrl: VIDEO_0349.url,
+        videoUrl: video2.url,
         showAd: true,
         adType: cfg.adType,
         speed: cfg.mainSpeed,
         showSavedTime: cfg.mainShowSavedTime,
+        savedTimeCap: cfg.mainSavedTimeCap,
         isVideo1: false,
       };
     }
@@ -75,9 +81,9 @@ function reducer(state: State, action: Action, conditionId: ConditionId): State 
 
     case 'AD_COMPLETED': {
       if (state.type !== 'watch') return state;
-      // A2: 광고 건너뛰기 → 1.0x, 아낀 시간 UI 없음
+      // A2: 광고 스킵 → 1.0x, 배지는 표시하되 아낀 시간은 0에서 고정
       if (conditionId === 'a2' && action.skipped) {
-        return { ...state, showAd: false, speed: 1.0, showSavedTime: false };
+        return { ...state, showAd: false, speed: 1.0, showSavedTime: true, savedTimeCap: 0 };
       }
       return { ...state, showAd: false };
     }
@@ -134,7 +140,7 @@ export default function ExperimentRunner() {
     // 피드는 항상 카드 1개: control/a1/a2 → subway, b1/b2 → gas
     return (
       <FeedPage
-        featured={isB ? VIDEO_GAS : VIDEO_SUBWAY}
+        featured={isB ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY)}
         onClickVideo={handleClickVideo}
       />
     );
@@ -144,7 +150,9 @@ export default function ExperimentRunner() {
     const isVideo1 = state.isVideo1;
 
     // 현재 재생 영상 메타
-    const currentMeta = isVideo1 ? VIDEO_GAS : (isB ? VIDEO_0349 : VIDEO_SUBWAY);
+    const currentMeta = isVideo1
+      ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS)
+      : (isB ? (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY));
     const videoTitle  = currentMeta.title;
 
     return (
@@ -153,6 +161,7 @@ export default function ExperimentRunner() {
         videoUrl={state.videoUrl}
         speed={state.speed}
         showSavedTime={state.showSavedTime}
+        savedTimeCap={state.savedTimeCap}
         adType={state.showAd ? (state.adType as AdType) : undefined}
         conditionId={conditionId}
         title={videoTitle}
@@ -160,7 +169,7 @@ export default function ExperimentRunner() {
         onAdComplete={handleAdComplete}
         onVideoEnded={isVideo1 ? handleVideo1Ended : handleMainVideoEnded}
         onClickNextVideo={isVideo1 ? handleClickVideo2 : undefined}
-        nextVideoMeta={isVideo1 ? VIDEO_0349 : undefined}
+        nextVideoMeta={isVideo1 ? (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349) : undefined}
       />
     );
   }

@@ -37,7 +37,7 @@ export const VIDEOS: VideoMeta[] = [
     channel: '진용진',
     viewCount: 838969,
     uploadedAt: '6년 전',
-    duration: '3:49',
+    duration: '4:47',
     thumbnailUrl: '/thumbnail-gas.avif',
     thumbnailColor: 'linear-gradient(135deg, #6c3a1a 0%, #401f0d 100%)',
     avatarColor: '#3ea6ff',
@@ -56,6 +56,45 @@ export const VIDEOS: VideoMeta[] = [
     avatarColor: '#3ea6ff',
     avatarLetter: 'J',
   },
+  {
+    id: 'monk',
+    url: '/assets/videos/monk.mp4',
+    title: '스님들은 절에 면접보고 들어가는걸까?',
+    channel: '진용진',
+    viewCount: 551331,
+    uploadedAt: '4년 전',
+    duration: '4:44',
+    thumbnailUrl: '/thumbnail-monk.avif',
+    thumbnailColor: 'linear-gradient(135deg, #2a1a6c 0%, #100d40 100%)',
+    avatarColor: '#3ea6ff',
+    avatarLetter: 'J',
+  },
+  {
+    id: 'darama',
+    url: '/assets/videos/drama.mp4',
+    title: '드라마 촬영때 식사씬에서 남긴 음식들은 어떻게 처리할까?',
+    channel: '진용진',
+    viewCount: 2170838,
+    uploadedAt: '4년 전',
+    duration: '4:48',
+    thumbnailUrl: '/thumbnail-drama.avif',
+    thumbnailColor: 'linear-gradient(135deg, #2a1a6c 0%, #100d40 100%)',
+    avatarColor: '#3ea6ff',
+    avatarLetter: 'J',
+  },
+  {
+    id: 'marble',
+    url: '/assets/videos/marble.mp4',
+    title: '구슬 속에 들어있는 건 정체가 뭘까?',
+    channel: '진용진',
+    viewCount: 4644288,
+    uploadedAt: '5년 전',
+    duration: '3:48',
+    thumbnailUrl: '/thumbnail-marble.avif',
+    thumbnailColor: 'linear-gradient(135deg, #2a1a6c 0%, #100d40 100%)',
+    avatarColor: '#3ea6ff',
+    avatarLetter: 'J',
+  },
 ];
 
 /** 조회수 숫자를 한국어 표시 문자열로 변환 (예: 12000 → "조회수 1.2만회") */
@@ -69,9 +108,15 @@ export function getVideoById(id: string): VideoMeta | undefined {
   return VIDEOS.find((v) => v.id === id);
 }
 
-/** control / a1 / a2 조건의 단일 메인 영상 */
+/** control / a1 조건의 메인 영상 */
 export const VIDEO_SUBWAY = VIDEOS[0];
-/** b1 / b2 조건의 첫 번째 영상 (1.05x 배속) */
+/** b1 조건의 첫 번째 영상 (1.05x 배속) */
 export const VIDEO_GAS = VIDEOS[1];
-/** b1 / b2 조건의 두 번째 영상 (광고 후 재생) */
+/** b1 조건의 두 번째 영상 (광고 후 재생) */
 export const VIDEO_0349 = VIDEOS[2];
+/** b2 조건의 두 번째 영상 (광고 후 재생) */
+export const VIDEO_MARBLE = VIDEOS[5];
+/** b2 조건의 첫 번째 영상 (1.05x 배속) */
+export const VIDEO_MONK = VIDEOS[3];
+/** a2 조건의 메인 영상 */
+export const VIDEO_DRAMA = VIDEOS[4];

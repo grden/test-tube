@@ -29,10 +29,11 @@ export type AdType = '5s_skip' | '15s_fixed';
 export interface ConditionConfig {
   videoCount: 1 | 2;
   adType: AdType;
-  video1Speed: number;
-  video1ShowSavedTime: boolean;
+  video1Speed: number | null;
+  video1ShowSavedTime: boolean | null;
   mainSpeed: number;
   mainShowSavedTime: boolean;
+  mainSavedTimeCap: number;
 }
 
 export type ExperimentPhase =
@@ -44,5 +45,6 @@ export type ExperimentPhase =
       adType: AdType | null;
       speed: number;
       showSavedTime: boolean;
+      savedTimeCap: number;
       isVideo1: boolean;
     };

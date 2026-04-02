@@ -24,16 +24,16 @@ function AdMessageBadge({ conditionId, currentTime }: { conditionId?: ConditionI
   let message: React.ReactNode = null;
 
   if (conditionId === 'a1') {
-    message = '⚡️ 광고 시청 후 FastTube가 적용됩니다.';
+    message = '⚡️ 광고 시청 후 AI 배속 조정이 적용됩니다.';
   } else if (conditionId === 'a2') {
-    message = '⚡️ 광고를 스킵하지 않으면 FastTube가 적용됩니다.';
+    message = '⚡️ 광고를 스킵하지 않으면 AI 배속 조정이 적용됩니다.';
   } else if (conditionId === 'b1') {
-    message = '⏳ 이전 영상에서 FastTube로 아낀 시간 15초로 광고가 재생됩니다.';
+    message = '⏳ 이전 영상에서 AI 배속 조정으로 아낀 시간 15초로 광고가 재생됩니다.';
   } else if (conditionId === 'b2') {
     const used = Math.min(5, Math.floor(currentTime) + 1);
     message = (
       <>
-        {'⏳ 이전 영상에서 FastTube로 아낀 시간 15초 중 '}
+        {'⏳ 이전 영상에서 AI 배속 조정으로 아낀 시간 15초 중 '}
         <span className="badge-time">{used}초</span>
         {'를 사용해 광고가 재생됩니다.'}
       </>
