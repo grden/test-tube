@@ -3,7 +3,7 @@ import type { ConditionId, ConditionConfig } from '../types';
 export const CONDITIONS: Record<ConditionId, ConditionConfig> = {
   control: {
     videoCount: 1,
-    adType: '5s_skip',
+    adType: '15s_fixed',
     video1Speed: null,
     video1ShowSavedTime: null,
     video1SavedTimeCap: null,
