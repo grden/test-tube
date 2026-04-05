@@ -39,7 +39,7 @@ function reducer(state: State, action: Action, conditionId: ConditionId): State 
           adType: null,
           speed: cfg.video1Speed ?? 1.05,
           showSavedTime: cfg.video1ShowSavedTime ?? false,
-          savedTimeCap: cfg.mainSavedTimeCap,
+          savedTimeCap: cfg.video1SavedTimeCap ?? cfg.mainSavedTimeCap,
           isVideo1: true,
         };
       } else {

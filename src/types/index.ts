@@ -31,6 +31,8 @@ export interface ConditionConfig {
   adType: AdType;
   video1Speed: number | null;
   video1ShowSavedTime: boolean | null;
+  /** 첫 번째 영상에서 표시할 아낀 시간 상한 (null이면 mainSavedTimeCap 사용) */
+  video1SavedTimeCap: number | null;
   mainSpeed: number;
   mainShowSavedTime: boolean;
   mainSavedTimeCap: number;
