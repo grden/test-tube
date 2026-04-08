@@ -120,3 +120,33 @@ export const VIDEO_MARBLE = VIDEOS[5];
 export const VIDEO_MONK = VIDEOS[3];
 /** a2 조건의 메인 영상 */
 export const VIDEO_DRAMA = VIDEOS[4];
+
+/** /sample 조건 공통 첫 번째(또는 단일) 영상 */
+export const VIDEO_NEWS: VideoMeta = {
+  id: 'news',
+  url: '/assets/media/news-60.mp4',
+  title: '[현장영상] 경찰에 딱 걸린 미국 2살 아기 운전자…“면허증 요구에 칫솔질만” / KBS 2025.11.01.',
+  channel: 'KBS News',
+  viewCount: 1743028,
+  uploadedAt: '4달 전',
+  duration: '1:04',
+  thumbnailUrl: '/thumbnail-news.avif',
+  thumbnailColor: 'linear-gradient(135deg, #1a3a6c 0%, #0d1f40 100%)',
+  avatarColor: '#44aaff',
+  avatarLetter: 'KBS',
+};
+
+/** /sample 조건 b1·b2 두 번째 영상 */
+export const VIDEO_WEATHER: VideoMeta = {
+  id: 'weather',
+  url: '/assets/media/weather-60.mp4',
+  title: '[날씨] 내일(8일) 아침도 꽃샘추위…일교차 커요 / KBS 2026.04.07.',
+  channel: 'KBS News',
+  viewCount: 10478,
+  uploadedAt: '4시간 전',
+  duration: '1:22',
+  thumbnailUrl: '/thumbnail-weather.avif',
+  thumbnailColor: 'linear-gradient(135deg, #1a6c3a 0%, #0d401f 100%)',
+  avatarColor: '#44aaff',
+  avatarLetter: 'KBS',
+};

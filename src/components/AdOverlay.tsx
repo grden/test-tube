@@ -8,9 +8,27 @@ interface AdOverlayProps {
 }
 
 const AD_URLS: Record<AdType, string> = {
-  '5s_skip': '/assets/media/trip-30.mp4',
-  '15s_fixed': '/assets/media/trip-15.mp4',
+  '5s_skip':    '/assets/media/trip-30.mp4',
+  '15s_fixed':  '/assets/media/trip-15.mp4',
+  '10s_fixed':  '/assets/media/monday-10.mp4',
+  '10s_skip':   '/assets/media/monday-10.mp4',
+  '2x_5s_skip': '/assets/media/clip-15.mp4',
 };
+
+// 순차 재생할 광고가 여러 개인 경우
+const AD_SEQUENCE: Partial<Record<AdType, string[]>> = {
+  '2x_5s_skip': ['/assets/media/clip-15.mp4', '/assets/media/trip-15.mp4'],
+};
+
+// 실제 video.duration 대신 표시할 고정 길이 (10s 광고용)
+const AD_DISPLAY_DURATION: Partial<Record<AdType, number>> = {
+  '10s_fixed': 10,
+  '10s_skip':  10,
+};
+
+function getInitialDuration(adType: AdType): number {
+  return AD_DISPLAY_DURATION[adType] ?? (adType === '15s_fixed' || adType === '2x_5s_skip' ? 15 : 30);
+}
 
 function formatTime(t: number) {
   const m = Math.floor(t / 60);
@@ -24,11 +42,11 @@ function AdMessageBadge({ conditionId, currentTime }: { conditionId?: ConditionI
   let message: React.ReactNode = null;
 
   if (conditionId === 'a1') {
-    message = '⚡️ 광고 시청 후 AI 배속 조정이 적용됩니다.';
+    message = '⚡️ 광고 시청 후 AI 배속 조정으로 15초가 아껴집니다.`';
   } else if (conditionId === 'a2') {
-    message = '⚡️ 광고를 스킵하지 않으면 AI 배속 조정이 적용됩니다.';
+    message = '⚡️ 광고를 스킵하지 않으면 AI 배속 조정으로 15초가 아껴집니다.`';
   } else if (conditionId === 'b1') {
-    message = '⏳ 이전 영상에서 AI 배속 조정으로 아낀 시간 15초로 광고가 재생됩니다.';
+    message = '⏳ 이전 영상에서 AI 배속 조정으로 15초를 아꼈습니다. 이제 10초 광고가 재생됩니다.`';
   } else if (conditionId === 'b2') {
     const used = Math.min(5, Math.floor(currentTime) + 1);
     message = (
@@ -46,38 +64,74 @@ function AdMessageBadge({ conditionId, currentTime }: { conditionId?: ConditionI
 export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(adType === '15s_fixed' ? 15 : 30);
+  const [duration, setDuration] = useState(getInitialDuration(adType));
   const [canSkip, setCanSkip] = useState(false);
   const [ended, setEnded] = useState(false);
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [adIndex, setAdIndex] = useState(0);
 
-  // const timeLeft = Math.max(0, Math.ceil(duration - currentTime));
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const adSequence = AD_SEQUENCE[adType];
+  const totalAds = adSequence ? adSequence.length : 1;
+  const currentSrc = adSequence ? adSequence[adIndex] : AD_URLS[adType];
 
+  const isSkippable = adType === '5s_skip' || adType === '10s_skip' || adType === '2x_5s_skip';
+  const is10s = adType === '10s_fixed' || adType === '10s_skip';
+
+  const displayDuration = AD_DISPLAY_DURATION[adType];
+  const displayTime = displayDuration !== undefined ? Math.min(currentTime, displayDuration) : currentTime;
+  const progress = duration > 0 ? (displayTime / duration) * 100 : 0;
+
+  // adIndex가 바뀔 때마다(또는 최초 마운트 시) 광고를 로드·재생하고 이벤트 리스너를 재설정한다.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // 사용자 상호작용 전에도 재생되도록 광고는 항상 무음 자동재생으로 시작한다.
+    // 이전 광고 상태 초기화
+    setCurrentTime(0);
+    setCanSkip(false);
+    setPaused(false);
+    setDuration(getInitialDuration(adType));
+
     video.defaultMuted = false;
     video.muted = false;
     video.playsInline = true;
 
-    const handleLoadedMetadata = () => setDuration(video.duration);
+    // 두 번째 광고부터는 새 src를 수동으로 로드해야 한다.
+    // (React가 src 어트리뷰트를 업데이트하지만 브라우저는 자동으로 재로드하지 않음)
+    if (adIndex > 0) {
+      video.load();
+    }
+
+    const handleLoadedMetadata = () => {
+      setDuration(displayDuration ?? video.duration);
+    };
 
     const handleTimeUpdate = () => {
       const t = video.currentTime;
       setCurrentTime(t);
-      if (adType === '5s_skip' && t >= 5) setCanSkip(true);
+      if (isSkippable && t >= 5) setCanSkip(true);
+      if (is10s && t >= 12) {
+        video.pause();
+        if (adIndex < totalAds - 1) {
+          setAdIndex(adIndex + 1);
+        } else {
+          setEnded(true);
+          onComplete(10, false);
+        }
+      }
     };
 
     const handleEnded = () => {
-      setEnded(true);
-      onComplete(video.duration, false);
+      if (adIndex < totalAds - 1) {
+        setAdIndex(adIndex + 1);
+      } else {
+        setEnded(true);
+        onComplete(displayDuration ?? video.duration, false);
+      }
     };
 
-    const handlePlay = () => setPaused(false);
+    const handlePlay  = () => setPaused(false);
     const handlePause = () => setPaused(true);
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -86,7 +140,6 @@ export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlay
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
-    // autoPlay가 무시되는 브라우저를 위해 mount 직후에도 재생을 한 번 더 시도한다.
     video.play().catch(() => {
       onComplete(0, false);
     });
@@ -98,11 +151,15 @@ export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlay
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [adIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSkip = () => {
     const video = videoRef.current;
-    onComplete(video ? video.currentTime : currentTime, true);
+    if (adIndex < totalAds - 1) {
+      setAdIndex(adIndex + 1);
+    } else {
+      onComplete(video ? video.currentTime : currentTime, true);
+    }
   };
 
   const handlePlayPause = () => {
@@ -126,7 +183,7 @@ export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlay
       <AdMessageBadge conditionId={conditionId} currentTime={currentTime} />
       <video
         ref={videoRef}
-        src={AD_URLS[adType]}
+        src={currentSrc}
         autoPlay
         playsInline
         preload="auto"
@@ -138,12 +195,12 @@ export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlay
           <div className="yt-splash-badge-area">
             <div className="yt-splash-badge">
               <span className="yt-splash-badge-label">광고</span>
-              <span className="yt-splash-badge-text">광고 · 1/1</span>
+              <span className="yt-splash-badge-text">광고 · {adIndex + 1}/{totalAds}</span>
             </div>
           </div>
 
           <div className="yt-splash-skip-area">
-            {adType === '5s_skip' && (
+            {isSkippable && (
               canSkip ? (
                 <button className="yt-splash-skip-btn" onClick={handleSkip}>
                   광고 건너뛰기
@@ -216,7 +273,7 @@ export default function AdOverlay({ adType, conditionId, onComplete }: AdOverlay
             </div>
 
             <div className="yt-native-time yt-ad-time-lg">
-              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(displayTime)}</span>
               <span className="yt-native-time-sep"> / </span>
               <span>{formatTime(duration)}</span>
             </div>

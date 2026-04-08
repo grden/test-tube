@@ -4,7 +4,10 @@ import FeedPage from './FeedPage';
 import WatchPage from './WatchPage';
 import { CONDITIONS, isValidCondition } from '../utils/conditions';
 import { useViewContext } from '../contexts/ViewContext';
-import { VIDEO_SUBWAY, VIDEO_GAS, VIDEO_0349, VIDEO_MONK, VIDEO_DRAMA, VIDEO_MARBLE } from '../data/videos';
+import {
+  VIDEO_SUBWAY, VIDEO_GAS, VIDEO_0349, VIDEO_MONK, VIDEO_DRAMA, VIDEO_MARBLE,
+  VIDEO_NEWS, VIDEO_WEATHER,
+} from '../data/videos';
 import type { ConditionId, AdType, ExperimentPhase } from '../types';
 
 // --------------- State Machine ---------------
@@ -22,60 +25,63 @@ function buildInitialState(): State {
   return { type: 'feed', video1Watched: false };
 }
 
-function reducer(state: State, action: Action, conditionId: ConditionId): State {
+const SAMPLE_CAP = 3;
+
+function reducer(state: State, action: Action, conditionId: ConditionId, isSample: boolean): State {
   const cfg = CONDITIONS[conditionId];
+
+  // 영상 선택 헬퍼 (isSample 여부에 따라 분기)
+  const video1Meta  = isSample ? VIDEO_NEWS   : (conditionId === 'b2' ? VIDEO_MONK   : VIDEO_GAS);
+  const video2Meta  = isSample ? VIDEO_WEATHER : (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349);
+  const mainAMeta   = isSample ? VIDEO_NEWS   : (conditionId === 'a2' ? VIDEO_DRAMA  : VIDEO_SUBWAY);
+
+  const cap1   = isSample ? SAMPLE_CAP : (cfg.video1SavedTimeCap ?? cfg.mainSavedTimeCap);
+  const capMain = isSample ? SAMPLE_CAP : cfg.mainSavedTimeCap;
 
   switch (action.type) {
     case 'CLICK_VIDEO': {
       if (state.type !== 'feed') return state;
 
       if (cfg.videoCount === 2) {
-        // B1: gas, B2: monk — 첫 번째 영상 1.05x 배속
-        const video1 = conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS;
         return {
           type: 'watch',
-          videoUrl: video1.url,
+          videoUrl: video1Meta.url,
           showAd: false,
           adType: null,
           speed: cfg.video1Speed ?? 1.05,
           showSavedTime: cfg.video1ShowSavedTime ?? false,
-          savedTimeCap: cfg.video1SavedTimeCap ?? cfg.mainSavedTimeCap,
+          savedTimeCap: cap1,
           isVideo1: true,
         };
       } else {
-        // Control/A1: subway, A2: drama — 광고 후 재생
-        const mainVideo = conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY;
         return {
           type: 'watch',
-          videoUrl: mainVideo.url,
+          videoUrl: mainAMeta.url,
           showAd: true,
           adType: cfg.adType,
           speed: cfg.mainSpeed,
           showSavedTime: cfg.mainShowSavedTime,
-          savedTimeCap: cfg.mainSavedTimeCap,
+          savedTimeCap: capMain,
           isVideo1: false,
         };
       }
     }
 
     case 'CLICK_VIDEO2': {
-      // B1: 0349, B2: marble — 광고 후 재생
       if (cfg.videoCount !== 2) return state;
-      const video2 = conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349;
       return {
         type: 'watch',
-        videoUrl: video2.url,
+        videoUrl: video2Meta.url,
         showAd: true,
         adType: cfg.adType,
         speed: cfg.mainSpeed,
         showSavedTime: cfg.mainShowSavedTime,
-        savedTimeCap: cfg.mainSavedTimeCap,
+        savedTimeCap: capMain,
         isVideo1: false,
       };
     }
 
     case 'VIDEO1_ENDED': {
-      // B1/B2: gas 영상 종료 — watch 페이지에 머물며 사이드바에서 0349 선택 대기
       return state;
     }
 
@@ -99,7 +105,11 @@ function reducer(state: State, action: Action, conditionId: ConditionId): State 
 
 // --------------- Component ---------------
 
-export default function ExperimentRunner() {
+interface ExperimentRunnerProps {
+  isSample?: boolean;
+}
+
+export default function ExperimentRunner({ isSample = false }: ExperimentRunnerProps) {
   const { conditionId: rawId } = useParams<{ conditionId: string }>();
   const conditionId: ConditionId = isValidCondition(rawId ?? '') ? (rawId as ConditionId) : 'control';
   const cfg = CONDITIONS[conditionId];
@@ -108,16 +118,17 @@ export default function ExperimentRunner() {
   const { setIsWatching } = useViewContext();
 
   const [state, dispatch] = useReducer(
-    (s: State, a: Action) => reducer(s, a, conditionId),
+    (s: State, a: Action) => reducer(s, a, conditionId, isSample),
     undefined,
     buildInitialState,
   );
 
   // URL을 현재 상태에 맞게 동기화
+  const basePath = isSample ? `/${conditionId}/sample` : `/${conditionId}`;
   const targetUrl =
     state.type === 'feed'
-      ? `/${conditionId}`
-      : `/${conditionId}/watch?v=${cfg.videoCount === 2 && !state.isVideo1 ? 2 : 1}`;
+      ? basePath
+      : `${basePath}/watch?v=${cfg.videoCount === 2 && !state.isVideo1 ? 2 : 1}`;
 
   useEffect(() => {
     navigate(targetUrl, { replace: true });
@@ -137,23 +148,24 @@ export default function ExperimentRunner() {
   const isB = cfg.videoCount === 2;
 
   if (state.type === 'feed') {
-    // 피드는 항상 카드 1개: control/a1/a2 → subway, b1/b2 → gas
-    return (
-      <FeedPage
-        featured={isB ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY)}
-        onClickVideo={handleClickVideo}
-      />
-    );
+    const featuredMeta = isSample
+      ? VIDEO_NEWS
+      : (isB ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY));
+    return <FeedPage featured={featuredMeta} onClickVideo={handleClickVideo} />;
   }
 
   if (state.type === 'watch') {
     const isVideo1 = state.isVideo1;
 
-    // 현재 재생 영상 메타
-    const currentMeta = isVideo1
-      ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS)
-      : (isB ? (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY));
-    const videoTitle  = currentMeta.title;
+    const currentMeta = isSample
+      ? (isVideo1 ? VIDEO_NEWS : (isB ? VIDEO_WEATHER : VIDEO_NEWS))
+      : (isVideo1
+          ? (conditionId === 'b2' ? VIDEO_MONK : VIDEO_GAS)
+          : (isB ? (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349) : (conditionId === 'a2' ? VIDEO_DRAMA : VIDEO_SUBWAY)));
+
+    const nextMeta = isSample
+      ? VIDEO_WEATHER
+      : (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349);
 
     return (
       <WatchPage
@@ -164,12 +176,12 @@ export default function ExperimentRunner() {
         savedTimeCap={state.savedTimeCap}
         adType={state.showAd ? (state.adType as AdType) : undefined}
         conditionId={conditionId}
-        title={videoTitle}
+        title={currentMeta.title}
         currentVideoMeta={currentMeta}
         onAdComplete={handleAdComplete}
         onVideoEnded={isVideo1 ? handleVideo1Ended : handleMainVideoEnded}
         onClickNextVideo={isVideo1 ? handleClickVideo2 : undefined}
-        nextVideoMeta={isVideo1 ? (conditionId === 'b2' ? VIDEO_MARBLE : VIDEO_0349) : undefined}
+        nextVideoMeta={isVideo1 ? nextMeta : undefined}
       />
     );
   }

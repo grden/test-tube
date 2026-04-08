@@ -13,7 +13,7 @@ export const CONDITIONS: Record<ConditionId, ConditionConfig> = {
   },
   a1: {
     videoCount: 1,
-    adType: '15s_fixed',
+    adType: '10s_fixed',
     video1Speed: null,
     video1ShowSavedTime: null,
     video1SavedTimeCap: null,
@@ -23,7 +23,7 @@ export const CONDITIONS: Record<ConditionId, ConditionConfig> = {
   },
   a2: {
     videoCount: 1,
-    adType: '5s_skip',
+    adType: '10s_skip',
     video1Speed: null,
     video1ShowSavedTime: null,
     video1SavedTimeCap: null,
@@ -33,7 +33,7 @@ export const CONDITIONS: Record<ConditionId, ConditionConfig> = {
   },
   b1: {
     videoCount: 2,
-    adType: '15s_fixed',
+    adType: '10s_fixed',
     video1Speed: 1.05,
     video1ShowSavedTime: true,
     video1SavedTimeCap: 15,
@@ -43,7 +43,7 @@ export const CONDITIONS: Record<ConditionId, ConditionConfig> = {
   },
   b2: {
     videoCount: 2,
-    adType: '5s_skip',
+    adType: '2x_5s_skip',
     video1Speed: 1.05,
     video1ShowSavedTime: true,
     video1SavedTimeCap: 15,

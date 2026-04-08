@@ -24,7 +24,7 @@ export interface VideoMeta {
   /** 채널 아바타 이니셜 */
   avatarLetter: string;
 }
-export type AdType = '5s_skip' | '15s_fixed';
+export type AdType = '5s_skip' | '15s_fixed' | '10s_fixed' | '10s_skip' | '2x_5s_skip';
 
 export interface ConditionConfig {
   videoCount: 1 | 2;
